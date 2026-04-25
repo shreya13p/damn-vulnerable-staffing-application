@@ -1,34 +1,38 @@
 name: Bandit SAST Scan
 
 on:
-  push:
-  pull_request:
+push:
+pull_request:
 
 jobs:
-  bandit:
-    runs-on: ubuntu-latest
+bandit:
+runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
+steps:
+  - name: Checkout code
+    uses: actions/checkout@v4
 
-      - name: Install Bandit
-        run: pip install bandit
+  - name: Set up Python
+    uses: actions/setup-python@v5
+    with:
+      python-version: '3.10'
 
-      - name: Run Bandit (JSON report)
-        run: |
-            bandit -r . -f json -o bandit-report.json -ll
-            
-      - name: Upload Bandit report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: bandit-report
-          path: bandit-report.json
-      
-       
+  - name: Install Bandit
+    run: pip install bandit
+
+  - name: Generate metadata
+    run: |
+      echo "DATE=$(date +'%Y-%m-%d_%H-%M-%S')" >> $GITHUB_ENV
+      echo "COMMIT=${GITHUB_SHA::7}" >> $GITHUB_ENV
+
+  - name: Run Bandit (JSON report)
+    run: |
+      bandit -r . -f json -o bandit-report-${DATE}-${COMMIT}.json -ll
+
+  - name: Upload Bandit report
+    if: always()
+    uses: actions/upload-artifact@v4
+    with:
+      name: bandit-report-${{ env.DATE }}-${{ env.COMMIT }}
+      path: bandit-report-${{ env.DATE }}-${{ env.COMMIT }}.json
